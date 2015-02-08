@@ -29,7 +29,7 @@ class Node
   end
   
   #to is Node, and cost is route cost
-  def addRoute(to, cost = 1)
+  def add_route(to, cost = 1)
     @routes << Route.new(self, to, cost)
   end
 
@@ -77,6 +77,7 @@ class Depq
 end
 
 class Path
+  attr_accessor :nodes
 
   include DebugLogger
 
@@ -119,20 +120,27 @@ class Path
     return ans.reverse
   end
 
-  def self.dump(pt)
+  # _pt_ :: output of Path::get
+  # _block_ :: block of concrete display procedure
+  def self.dump(pt, &block)
     return unless pt
-    Log.debug pt.inject(""){|res, p| res += "#{p.inspect}<->"}    
+    default = -> (p){p.inspect}
+    if block
+      Log.debug pt.inject(""){|res, p| res += "#{yield p}<->"}
+    else
+      Log.debug pt.inject(""){|res, p| res += "#{default.call(p)}<->"}
+    end
   end
-
-###################################
-protected
-###################################
 
   def get_node(resource)
     n = node(resource)
     return n if n
     return Node.new(resource)
   end
+
+###################################
+protected
+###################################
 
   def node(resource)
     @nodes.find{|n| n.resource == resource}
