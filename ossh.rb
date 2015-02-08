@@ -1,15 +1,16 @@
 #!/usr/bin/env ruby
 
-require "./dijkstra_spf.rb"
+require "./dijkstra_spf"
+require "securerandom"
 
 #sshpass -p miyakz ssh -l miyakz -o StrictHostKeyChecking=no 192.168.122.13 "sshpass -p debug00 ssh -l root -o StrictHostKeyChecking=no 192.168.122.40 hostname"
 
 class Server
-  attr_accessor :host, :ip, :login, :passwd
-  def initialize(host:, ip:, login:, passwd:)
+  attr_accessor :host, :ip, :user, :passwd
+  def initialize(host:, ip:, user:, passwd:)
     @host = host
     @ip = ip
-    @login = login
+    @user = user
     @passwd = passwd
   end 
 end
@@ -50,6 +51,9 @@ end
 class OnionSsh
   attr_accessor :path_of_servers
 
+  #TODO: to be configurable
+  TEMP_DIR="/tmp/onion_ssh"
+
   # _path_of_servers_ :: (Array) array of Server that Path generated
   def initialize(path_of_servers)
     @path_of_servers = path_of_servers
@@ -65,10 +69,32 @@ class OnionSsh
   end
 
   #TODO: use naitive ruby lib
-  def scp(file)
+  def scp(src_file, dst_file, option = "")
+    _path_of_servers = @path_of_servers.dup
+
+    #generate session uuid and make temp dir string
+    temp_dir = "/tmp/onion_ssh/#{SecureRandom.uuid}/"
+    temp_file = "#{temp_dir}#{dst_file}"
+
+    #first, local src file to edge server's temp dir
+    #(/tmp/onion_ssh/<session uuid>/<files>)
+    first = _path_of_servers.shift
+    `#{ssh_str(first, "mkdir -p #{temp_dir} >& /dev/null")}`
+    `#{scp_str(src_file, first, temp_file)}`
+    
+    #second to last - 1 , scp temp dir to temp dir
+    last = _path_of_servers.pop
+    last_minus_one = _path_of_servers.pop
+    _scp_second_to_last_minus_one(_path_of_servers)
+    
+    #last - 1 to last , scp temp dir to dest dir
+    `#{ssh_str(last_minus_one, "mkdir -p #{temp_dir} >& /dev/null")}`
+    `#{scp_str(src_file, first_sv, temp_file)}`
   end
 
+#################################
 protected
+#################################
 
   # _path_of_servers_ :: (Array) array of Server that Path generated
   # _sshpass_command_ :: (string) sshpass_command that generated
@@ -79,19 +105,30 @@ protected
     end
 
     server = path_of_servers.shift
-
-    sshpass_command += " \"sshpass -p #{server.passwd}"\
-                       " ssh -l #{server.login}" \
-                       " -o StrictHostKeyChecking=no" \
-                       " #{server.ip}"
-
+    #shell command needs double quote's escape
+    sshpass_command += "\"#{ssh_str(server)}"
     _ssh(path_of_servers, sshpass_command, user_exec_command)
+  end
+
+  def ssh_str(server, command = "")
+    " sshpass -p #{server.passwd}"\
+    " ssh -l #{server.user}" \
+    " -o StrictHostKeyChecking=no" \
+    " #{server.ip} #{command}"
+  end
+
+  def scp_str(src_file, server, dst_file)
+    " sshpass -p #{server.passwd}"\
+    " scp" \
+    " -o StrictHostKeyChecking=no" \
+    " #{src_file}"
+    " #{server.user}@#{server.ip}"
   end
 end
 
-s1 = Server.new(host: "juno01", ip: "192.168.122.13", login: "miyakz", passwd: "miyakz")
-s2 = Server.new(host: "cent_icehouse01", ip: "192.168.122.40", login: "root", passwd: "debug00")
-s3 = Server.new(host: "icehouse01", ip: "192.168.122.84", login: "miyakz", passwd: "miyakz")
+s1 = Server.new(host: "juno01", ip: "192.168.122.13", user: "miyakz", passwd: "miyakz")
+s2 = Server.new(host: "cent_icehouse01", ip: "192.168.122.40", user: "root", passwd: "debug00")
+s3 = Server.new(host: "icehouse01", ip: "192.168.122.84", user: "miyakz", passwd: "miyakz")
 
 sc = ServerConnections.new
 
