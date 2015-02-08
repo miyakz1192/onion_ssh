@@ -1,36 +1,10 @@
 #!/usr/bin/env ruby
 
+require "./dijkstra_spf.rb"
+
 #sshpass -p miyakz ssh -l miyakz -o StrictHostKeyChecking=no 192.168.122.13 "sshpass -p debug00 ssh -l root -o StrictHostKeyChecking=no 192.168.122.40 hostname"
 
-class Route
-  attr_accessor :from, :to
-  def initialize(from: "undefined_from", to: "undefined_to")
-    @from = from
-    @to = to 
-  end 
-end
-
-class Router
-  attr_accessor :routes
-
-  def initialize
-    routes = []
-  end
-
-  def add(route)
-    routes << route
-  end
-
-  def del(route)
-    routes.delete(route)
-  end
-
-  def find_destination(from)
-    routes.detect{|r| r.from = from}
-  end
-end
-
-class Account
+class Server
   attr_accessor :host, :login, :passwd
   def initialize(host:, login:, passwd:)
     @host = host
@@ -39,13 +13,21 @@ class Account
   end 
 end
 
-a = Account.new(host: "192.168.122.13", login: "miyakz", passwd: "miyakz")
-r = Route.new(from: "a", to: "b")
+class ServerConnections
+  attr_reader :nodes, :servers
 
-router = Router.new
-router.add(r)
+  def initialize
+    nodes = Set.new
+  end
 
-puts a.host, a.login, a.passwd
-puts r.from, r.to
+  def server(name:, ip:, login:, passwd:)
+    
+  end
+end
+
+s1 = Server.new(host: "192.168.122.13", login: "miyakz", passwd: "miyakz")
+s2 = Server.new(host: "192.168.122.40", login: "root", passwd: "debug00")
+s3 = Server.new(host: "192.168.122.84", login: "miyakz", passwd: "miyakz")
+
 
 
