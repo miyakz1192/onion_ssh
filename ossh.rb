@@ -1,7 +1,6 @@
-#!/usr/bin/env ruby
-
 require "./dijkstra_spf"
 require "securerandom"
+require "server_connections"
 
 class Server
   attr_accessor :host, :ip, :user, :passwd
@@ -150,24 +149,3 @@ protected
   end
 end
 
-s1 = Server.new(host: "juno01", ip: "192.168.122.13", user: "miyakz", passwd: "miyakz")
-s2 = Server.new(host: "cent_icehouse01", ip: "192.168.122.40", user: "root", passwd: "debug00")
-s3 = Server.new(host: "icehouse01", ip: "192.168.122.84", user: "miyakz", passwd: "miyakz")
-
-sc = ServerConnections.new
-
-sc.connections do |sc|
-  sc.connect from: s1, to: s2
-  sc.connect from: s2, to: s3
-end
-
-pt = sc.path.get(s1, s3)
-#Path.dump(pt)
-
-#puts "==== basic ssh command hostname ==== "
-ossh = OnionSsh.new
-#puts ossh.ssh_str(pt, "hostname")
-puts ossh.ssh(pt, "hostname")
-
-#puts "==== basic scp === "
-ossh.scp("/tmp/go.sh", pt, "/tmp/")
