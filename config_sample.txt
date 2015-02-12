@@ -9,25 +9,25 @@ load_from "/etc/hosts"
 #this configuration defines server1,2,3 have "login_user_name" 
 #and "passwd"
 ######################################################################
-account_group "login_user_name", "passwd" {
-  "server1",
+account_group "login_user_name", "passwd" do 
+  ["server1",
   "server2",
-  "server3"
-}
+  "server3"]
+end
 ######################################################################
 #SAMPLE OF SERVER GROUP
 #this configuration defines server1,2,3 are in group "sv_group1" 
 ######################################################################
 #sample of sv_group1
-server_group "sv_group1" {
-  "server1",
+server_group "sv_group1" do
+  ["server1",
   "server2",
-  "server3"
-}
+  "server3"]
+end
 #sample of sv_group2
-server_group "sv_gruop2" {
-  "server*",
-}
+server_group "sv_gruop2" do 
+  "server*"
+end
 ######################################################################
 #SAMPLE OF SERVER CONNECTIONS 
 #defines server's connection relationship.
@@ -37,8 +37,8 @@ server_group "sv_gruop2" {
 #2) one server and server group
 #3) server group and server group
 ######################################################################
-server_connections {
-  ["server1", "server2"],
+server_connections do 
+  [["server1", "server2"],
   ["server1", "sv_group2"],
-  ["sv_group1", "sv_group2"],
-}
+  ["sv_group1", "sv_group2"]]
+end

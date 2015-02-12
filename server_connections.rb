@@ -1,3 +1,4 @@
+require "./dijkstra_spf"
 
 class Server
   attr_accessor :host, :ip, :user, :passwd
