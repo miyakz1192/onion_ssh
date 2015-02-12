@@ -3,8 +3,6 @@
 require "./dijkstra_spf"
 require "securerandom"
 
-#sshpass -p miyakz ssh -l miyakz -o StrictHostKeyChecking=no 192.168.122.13 "sshpass -p debug00 ssh -l root -o StrictHostKeyChecking=no 192.168.122.40 hostname"
-
 class Server
   attr_accessor :host, :ip, :user, :passwd
   def initialize(host:, ip:, user:, passwd:)
