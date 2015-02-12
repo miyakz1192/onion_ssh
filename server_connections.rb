@@ -2,7 +2,7 @@ require "./dijkstra_spf"
 
 class Server
   attr_accessor :host, :ip, :user, :passwd
-  def initialize(host:, ip:, user:, passwd:)
+  def initialize(host:, ip:, user: "UNDEF USER", passwd: "UNDEF PASSWD")
     @host = host
     @ip = ip
     @user = user
