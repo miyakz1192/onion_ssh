@@ -9,25 +9,28 @@ load_from "/etc/hosts"
 #this configuration defines server1,2,3 have "login_user_name" 
 #and "passwd"
 ######################################################################
-account_group "login_user_name", "passwd" do 
-  ["server1",
-  "server2",
-  "server3"]
-end
+account_group "login1", "passwd2",
+  [
+    "icehouse01",
+    "juno01",
+    "dockerexp"
+  ]
+
+account_group "login2", "passwd2",
+  [
+    "cent_icehouse01"
+  ]
+######################################################################
 ######################################################################
 #SAMPLE OF SERVER GROUP
 #this configuration defines server1,2,3 are in group "sv_group1" 
 ######################################################################
 #sample of sv_group1
-server_group "sv_group1" do
-  ["server1",
-  "server2",
-  "server3"]
-end
-#sample of sv_group2
-server_group "sv_gruop2" do 
-  "server*"
-end
+server_group "sv_group1",
+  [
+    "juno01",
+    "dockerexp"
+  ]
 ######################################################################
 #SAMPLE OF SERVER CONNECTIONS 
 #defines server's connection relationship.
@@ -37,8 +40,8 @@ end
 #2) one server and server group
 #3) server group and server group
 ######################################################################
-server_connections do 
-  [["server1", "server2"],
-  ["server1", "sv_group2"],
-  ["sv_group1", "sv_group2"]]
-end
+server_connections([
+    ["localhost","cent_icehouse01"],
+    ["cent_icehouse01", "sv_group1"],
+    ["sv_group1", "icehouse01"]
+])
