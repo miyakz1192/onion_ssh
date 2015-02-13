@@ -4,6 +4,10 @@ $sc = ServerConnections.new
 $servers = []
 $server_groups = {}
 
+def server_connections_object
+  $sc
+end
+
 def find_server_by_name(name)
   $servers.detect{|sv| sv.host == name}
 end
@@ -24,10 +28,10 @@ def load_from(file_name)
   end
 end
 
-def account_group(login_user_name, passwd, &block)
-  return unless block.call.is_a?(Array)
+def account_group(login_user_name, passwd, servers)
+  return unless servers.is_a?(Array)
 
-  block.call.each do |sv_name|
+  servers.each do |sv_name|
     sv = find_server_by_name(sv_name)
     raise "ERROR: no such server name=#{sv_name}" unless sv
     sv.user = login_user_name
@@ -36,10 +40,10 @@ def account_group(login_user_name, passwd, &block)
 end
 
 
-def server_group(group_name, &block)
-  return unless block.call.is_a?(Array)
+def server_group(group_name, servers)
+  return unless servers.is_a?(Array)
 
-  block.call.each do |sv_name|
+  servers.each do |sv_name|
     sv = find_server_by_name(sv_name)
     raise "ERROR: no such server name=#{sv_name}" unless sv
     if $server_groups[group_name] == nil
@@ -49,10 +53,10 @@ def server_group(group_name, &block)
   end
 end
 
-def server_connections(&block)
-  return unless block.call.is_a?(Array)
+def server_connections(servers)
+  return unless servers.is_a?(Array)
 
-  block.call.each do |sv_pair|
+  servers.each do |sv_pair|
     svg0 = find_server_group_by_name(sv_pair[0])
     svg1 = find_server_group_by_name(sv_pair[1])
     sv0 = find_server_by_name(sv_pair[0])
@@ -72,6 +76,22 @@ def server_connections(&block)
     servers_left.product(servers_right).each do |sv_pair|
       $sc.connect(from: sv_pair[0], to: sv_pair[1])
     end
+  end
+end
+
+def read_config
+  begin
+    if File.exists?("#{Dir.home}/.ossh/config")
+      eval(open("#{Dir.home}/.ossh/config").read)
+    elsif File.exists?("/etc/ossh/config")
+      eval(open("/etc/ossh/config").read)
+    else
+      raise "config file not found in ~/.ossh/config or "\
+            "/etc/ossh/config"
+    end
+  rescue => e
+    puts e.message
+    puts e.backtrace()
   end
 end
 

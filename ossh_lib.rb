@@ -1,6 +1,6 @@
 require "./dijkstra_spf"
 require "securerandom"
-require "server_connections"
+require "./server_connections"
 
 class OnionSsh
   attr_accessor :path_of_servers
@@ -10,36 +10,19 @@ class OnionSsh
 
   #TODO: use naitive ruby lib
   def ssh(path_of_servers, command)
+    remove_first_localhost!(path_of_servers)
     `#{ssh_str(path_of_servers, command)}`
   end
 
   #TODO: use naitive ruby lib
   def ssh_without_dquote_command(path_of_servers, command)
+    remove_first_localhost!(path_of_servers)
     `#{ssh_str_without_dquote_command(path_of_servers, command)}`
   end
 
-  def ssh_str(path_of_servers, command)
-    return if path_of_servers.size == 0
-    if path_of_servers.size == 1
-      #wrap command with "
-      ssh_str_without_dquote_command(path_of_servers, "\"#{command}\"")
-    else
-      #wrap command with \"
-      ssh_str_without_dquote_command(path_of_servers, "\\\"#{command}\\\"")
-    end 
-  end
-
-  def ssh_str_without_dquote_command(path_of_servers, command)
-    sshpass_command = _ssh(path_of_servers.dup, "", command)
-    #replace first \"
-    sshpass_command.sub!(/\"/,"")
-    #added remains \"
-    sshpass_command += "\"" * (path_of_servers.size - 1)
-  end
-
-
   #TODO: use naitive ruby lib
   def scp(src_file, path_of_servers, dst_file, option = "")
+    remove_first_localhost!(path_of_servers)
     _path_of_servers = path_of_servers.dup
 
     #generate session uuid and make temp dir string
@@ -74,6 +57,31 @@ class OnionSsh
 #################################
 protected
 #################################
+
+  def remove_first_localhost!(path_of_servers)
+    if path_of_servers.first.host == "localhost"
+      path_of_servers.shift
+    end
+  end
+
+  def ssh_str(path_of_servers, command)
+    return if path_of_servers.size == 0
+    if path_of_servers.size == 1
+      #wrap command with "
+      ssh_str_without_dquote_command(path_of_servers, "\"#{command}\"")
+    else
+      #wrap command with \"
+      ssh_str_without_dquote_command(path_of_servers, "\\\"#{command}\\\"")
+    end 
+  end
+
+  def ssh_str_without_dquote_command(path_of_servers, command)
+    sshpass_command = _ssh(path_of_servers.dup, "", command)
+    #replace first \"
+    sshpass_command.sub!(/\"/,"")
+    #added remains \"
+    sshpass_command += "\"" * (path_of_servers.size - 1)
+  end
 
   # _path_of_servers_ :: (Array) array of Server that Path generated
   # _sshpass_command_ :: (string) sshpass_command that generated
