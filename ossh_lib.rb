@@ -10,20 +10,22 @@ class OnionSsh
 
   #TODO: use naitive ruby lib
   def ssh(path_of_servers, command)
-    remove_first_localhost!(path_of_servers)
-    `#{ssh_str(path_of_servers, command)}`
+    _path_of_servers = path_of_servers.dup
+    remove_first_localhost!(_path_of_servers)
+    `#{ssh_str(_path_of_servers, command)}`
   end
 
   #TODO: use naitive ruby lib
   def ssh_without_dquote_command(path_of_servers, command)
-    remove_first_localhost!(path_of_servers)
-    `#{ssh_str_without_dquote_command(path_of_servers, command)}`
+    _path_of_servers = path_of_servers.dup
+    remove_first_localhost!(_path_of_servers)
+    `#{ssh_str_without_dquote_command(_path_of_servers, command)}`
   end
 
   #TODO: use naitive ruby lib
   def scp(src_file, path_of_servers, dst_file, option = "")
-    remove_first_localhost!(path_of_servers)
     _path_of_servers = path_of_servers.dup
+    remove_first_localhost!(_path_of_servers)
 
     #generate session uuid and make temp dir string
     temp_dir = "/tmp/onion_ssh/#{SecureRandom.uuid}/"
