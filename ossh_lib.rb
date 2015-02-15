@@ -1,6 +1,7 @@
 require "./dijkstra_spf"
 require "securerandom"
 require "./server_connections"
+require "open3"
 
 class OnionSsh
   attr_accessor :path_of_servers
@@ -9,17 +10,22 @@ class OnionSsh
   TEMP_DIR="/tmp/onion_ssh"
 
   #TODO: use naitive ruby lib
+  # _path_of_servers_ :: (Server of Array) path_of_servers
+  # _command_ :: (String) command to exec
+  # return :: (Array) first(String) stdout
+  #                   second(String) stderr
+  #                   third(Process::Status) result code
   def ssh(path_of_servers, command)
     _path_of_servers = path_of_servers.dup
     remove_first_localhost!(_path_of_servers)
-    `#{ssh_str(_path_of_servers, command)}`
+    Open3.capture3(ssh_str(_path_of_servers, command))
   end
 
   #TODO: use naitive ruby lib
   def ssh_without_dquote_command(path_of_servers, command)
     _path_of_servers = path_of_servers.dup
     remove_first_localhost!(_path_of_servers)
-    `#{ssh_str_without_dquote_command(_path_of_servers, command)}`
+    Open3.capture3(ssh_str_without_dquote_command(_path_of_servers, command))
   end
 
   #TODO: use naitive ruby lib
@@ -28,13 +34,13 @@ class OnionSsh
     remove_first_localhost!(_path_of_servers)
 
     #generate session uuid and make temp dir string
-    temp_dir = "/tmp/onion_ssh/#{SecureRandom.uuid}/"
-    temp_file = "#{temp_dir}#{File.basename(src_file)}"
+    sid = SecureRandom.uuid
+    temp_file = "#{temp_dir(sid)}#{File.basename(src_file)}"
 
     #first, local src file to edge server's temp dir
     #(/tmp/onion_ssh/<session uuid>/<files>)
     first = _path_of_servers.shift
-    ssh([first], "mkdir -p #{temp_dir} >& /dev/null")
+    ssh([first], "mkdir -p #{temp_dir(sid)} >& /dev/null")
     `#{one_scp_str(src_file, first, temp_file)}`
     
     #second to last - 1 , scp temp dir to temp dir
@@ -43,22 +49,43 @@ class OnionSsh
     _second_to_last_minus_one = _path_of_servers
     _second_to_last_minus_one.each do |sv|
       temp_path << sv
-      ssh(temp_path,"mkdir -p #{temp_dir} >& /dev/null")
+      ssh(temp_path,"mkdir -p #{temp_dir(sid)} >& /dev/null")
     end
 
     temp_path = [first]
     _second_to_last_minus_one.each do |sv|
-      ssh(temp_path, "#{one_scp_str(temp_file, sv, temp_dir)}")
+      ssh(temp_path, "#{one_scp_str(temp_file, sv, temp_dir(sid))}")
       temp_path << sv
     end
 
     #last minus one's path=(temp_path above) and last
     ssh(temp_path, "#{one_scp_str(temp_file, last, dst_file)}")
+    #delete garbage
+    clear_temp([first] + _second_to_last_minus_one, sid)
+  end
+
+  def clear_temp(path_of_servers, sid="all")
+    _path_of_servers = path_of_servers.dup
+    remove_first_localhost!(_path_of_servers)
+
+    temp_path = []
+    _path_of_servers.each do |sv|
+      temp_path << sv
+      if sid == "all"
+        ssh(temp_path, "rm -rf #{TEMP_DIR} >& /dev/null")
+      else
+        ssh(temp_path, "rm -r #{temp_dir(sid)} >& /dev/null")
+      end
+    end
   end
 
 #################################
 protected
 #################################
+
+  def temp_dir(session_id)
+    "/tmp/onion_ssh/#{session_id}/"
+  end
 
   def remove_first_localhost!(path_of_servers)
     if path_of_servers.first.host == "localhost"

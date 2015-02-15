@@ -4,13 +4,12 @@ require "./ossh_lib"
 require "./config"
 require 'optparse'
 
-if ARGV.size != 2
-  puts "usage: target_server command"
+if ARGV.size != 1
+  puts "usage: target_serverd"
   exit 1
 end
 
 target_server_name = ARGV[0]
-command = ARGV[1]
 
 read_config
 
@@ -23,7 +22,4 @@ if localhost == nil || target_server == nil
 end
 
 pt = server_connections_object.path.get(localhost, target_server)
-out, err, code = OnionSsh.new.ssh(pt, command)
-
-puts out
-exit code.exitstatus
+OnionSsh.new.clear_temp(pt)
